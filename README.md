@@ -382,7 +382,67 @@ Para una versión futura del proyecto se podría implementar una base de datos c
 
 ## Crear usuario
 
-Crear usuario (Pruebas/Crear_Usuario.png)
+<img src = "Pruebas/Crear_Usuario.png">
+<img src = "Pruebas/Crear_Respuesta.png">
+
+## Validación de error: nombre con caracteres insuficientes
+
+<img src = "Pruebas/Validacion_Caracteres.png">
+<img src = "Pruebas/Respuesta_Caracteres.png">
+
+
+## Validacion de error: rol incorrecto
+
+<img src = "Pruebas/Rol.png">
+<img src = "Pruebas/Rol_Respuesta.png">
+
+
+## Validacion de error: Correo inavlido
+
+<img src = "Pruebas/Correo.png">
+<img src = "Pruebas/Correo_Respuesta.png">
+
+
+## Validacion de error: correo duplicado
+
+Agregamos un nuevo usuario
+
+<img src = "Pruebas/Correo_Duplicado.png">
+<img src = "Pruebas/Duplicado_Respuesta.png">
+
+Ejecutamos nuevamente sin cambiar los aparemtros iniciales para comprobar que no se duplique
+
+<img src = "Pruebas/Duplicado_Error.png">
+<img src = "Pruebas/Error_Correo.png">
+
+
+## Prueba del Get sin ingresar rol ni estado 
+
+<img src = "Pruebas/Get.png">
+
+
+## Prueba de Get con rol
+
+<img src = "Pruebas/Get_Rol.png">
+<img src = "Pruebas/Respuesta_Get.png">
+
+
+## Prueba de Get con estado
+
+<img src = "Pruebas/Usuario_Activo.png">
+
+
+## Prueba de Get con estado y rol
+<img src = "Pruebas/Rol_Estado.png">
+
+
+## Cabeceras HTTP 
+<img src = "Pruebas/HTTP.png">
+
+
+## Obtener usuario por ID
+
+<img src = "Pruebas/ID.png">
 
 ---
 
