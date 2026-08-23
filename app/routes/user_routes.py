@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from app.schemas.user_schema import UserCreate, UserResponse
 
 router = APIRouter(
     prefix="/users",
@@ -38,93 +39,66 @@ base_datos = [
 ]
 
 
-# GET /users/
-@router.get("/")
-def obtener_usuarios():
+@router.get("/", response_model=list[UserResponse])
+def obtener_usuarios(
+    role: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None)
+):
 
-    if not base_datos:
-        raise HTTPException(
-            status_code=404,
-            detail="No hay usuarios registrados"
-        )
+    usuarios = base_datos
 
-    return base_datos
+    if role is not None:
+        usuarios = [
+            usuario for usuario in usuarios
+            if usuario["role"] == role
+        ]
 
+    if is_active is not None:
+        usuarios = [
+            usuario for usuario in usuarios
+            if usuario["is_active"] == is_active
+        ]
 
-# GET /users/filtrar/rol
-@router.get("/filtrar/rol")
-def filtrar_por_rol(role: str):
-
-    # Validar que se haya enviado el rol
-    if not role:
-        raise HTTPException(
-            status_code=400,
-            detail="Debe proporcionar un rol"
-        )
-
-    # Validar roles permitidos
-    roles_permitidos = ["admin", "support", "user"]
-
-    if role not in roles_permitidos:
-        raise HTTPException(
-            status_code=400,
-            detail="Rol no válido. Los roles permitidos son: admin, support, user"
-        )
-
-    usuarios = []
-
-    for usuario in base_datos:
-        if usuario["role"] == role:
-            usuarios.append(usuario)
-
-    # Si no hay usuarios con ese rol
     if not usuarios:
         raise HTTPException(
             status_code=404,
-            detail="No se encontraron usuarios con ese rol"
+            detail="No se encontraron usuarios"
         )
 
     return usuarios
 
-
-# GET /users/filtrar/estado
-@router.get("/filtrar/estado")
-def filtrar_por_estado(is_active: bool):
-
-    usuarios = []
-
+@router.get("/{id}", response_model=UserResponse)
+def obtener_usuario(id: int):
     for usuario in base_datos:
-        if usuario["is_active"] == is_active:
-            usuarios.append(usuario)
-
-    # Si no existen usuarios con ese estado
-    if not usuarios:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontraron usuarios con ese estado"
-        )
-
-    return usuarios
-
-
-# GET /users/{user_id}
-@router.get("/{user_id}")
-def obtener_usuario(user_id: int):
-
-    # Validar que el ID sea positivo
-    if user_id <= 0:
-        raise HTTPException(
-            status_code=400,
-            detail="El ID debe ser un número mayor que 0"
-        )
-
-    # Buscar usuario por ID
-    for usuario in base_datos:
-        if usuario["id"] == user_id:
+        if usuario["id"] == id:
             return usuario
 
-    # Si no encuentra el usuario
     raise HTTPException(
         status_code=404,
         detail="Usuario no encontrado"
     )
+
+
+@router.post("/", response_model=UserResponse, status_code=201)
+def crear_usuario(usuario: UserCreate):
+
+    for usuario_existente in base_datos:
+        if usuario_existente["email"] == usuario.email:
+            raise HTTPException(
+                status_code=400,
+                detail="El correo electrónico ya está registrado"
+            )
+
+    nuevo_id = max([usuario["id"] for usuario in base_datos], default=0) + 1
+
+    nuevo_usuario = {
+        "id": nuevo_id,
+        "name": usuario.name,
+        "email": usuario.email,
+        "role": usuario.role,
+        "is_active": usuario.is_active
+    }
+
+    base_datos.append(nuevo_usuario)
+
+    return nuevo_usuario
