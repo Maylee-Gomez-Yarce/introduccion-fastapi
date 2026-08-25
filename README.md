@@ -286,6 +286,151 @@ El código de respuesta es:
 
 ---
 
+## 7. Actualizar un usuario con PUT
+
+### Metodo 
+
+```http
+PUT /users/{id}
+```
+
+permite actualizar los datos completos de un usuario existente.
+
+### Body
+
+```json
+{
+    "name": "Paula Actualizada",
+    "email": "paula.actualizada@gmail.com",
+    "role": "support",
+    "is_active": false
+}
+```
+
+## Respuesta
+
+```json
+{
+    "id": 1,
+    "name": "Paula Actualizada",
+    "email": "paula.actualizada@gmail.com",
+    "role": "support",
+    "is_active": false
+}
+```
+
+El código de respuesta es:
+
+```text
+200 ok 
+```
+
+Si el usuario no existe la API devuelve:
+
+```json
+{
+     "detail": "Usuario no encontrado"
+}
+```
+
+Con código:
+
+```text
+404 Not Found
+```
+
+---
+
+## 8. Actualizar parcialmente un usuario con PATCH
+
+Permite enviar únicamente los campos que se desean modificar. Los demás datos permanecen sin cambios.
+
+### Metodo 
+
+```http 
+PATCH /users/{id}
+```
+
+## Body 
+
+```json 
+{
+    "name": "Carlos Actualizado"
+}
+```
+
+## Respuesta
+
+```json 
+{
+    "id": 2,
+    "name": "Carlos Actualizado",
+    "email": "carlos@gmail.com",
+    "role": "support",
+    "is_active": true
+}
+```
+
+El código de respuesta es:
+
+```text
+200 ok 
+```
+
+Si el usuario no existe, la API devuelve:
+
+```json 
+{
+    "detail": "Usuario no encontrado"
+}
+```
+
+Con código:
+
+```text
+404 Not Found
+```
+
+---
+
+### 9. Eliminar un usuario con DELETE
+
+permite eliminar un usuario de la base de datos temporal.
+
+## Metodo 
+
+```http 
+DELETE /users/{id}
+```
+
+```http 
+DELETE /users/4
+```
+
+## Respuesta 
+
+```json 
+{
+    "message": "Usuario eliminado correctamente"
+}
+```
+
+El código de respuesta es: 
+
+```text 
+200 OK
+```
+---
+
+## Diferencia entre PUT y PATCH
+
+| Método |                 Fucion                   |
+|--------|------------------------------------------|
+|  PUT	 | Actualiza todos los datos del usuario    |
+| PATCH	 | Actualiza únicamente los campos enviados |
+
+---
+
 # Manejo de errores
 
 La API implementa diferentes códigos de estado HTTP para informar el resultado de las operaciones.
@@ -378,7 +523,7 @@ Para una versión futura del proyecto se podría implementar una base de datos c
 
 ---
 
-# 🧪 Pruebas
+# Pruebas
 
 ## Crear usuario
 
@@ -443,6 +588,23 @@ Ejecutamos nuevamente sin cambiar los aparemtros iniciales para comprobar que no
 ## Obtener usuario por ID
 
 <img src = "Pruebas/ID.png">
+
+
+## Prueba de Put: actualizar usuario
+
+<img src = "Pruebas/Actualizar.png">
+<img src = "Pruebas/Actualizar_Respuesta.png">
+
+
+## Prueba del Patch: actualizar nombre
+
+<img src = "Pruebas/Actualizar_Patch.png">
+<img src = "Pruebas/Patch_Respuesta.png">
+
+
+## Prueba de Delete
+
+<img src = "Pruebas/Delete.png">
 
 ---
 

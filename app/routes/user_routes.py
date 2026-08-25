@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas.user_schema import UserCreate, UserResponse
+from app.schemas.user_schema import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(
     prefix="/users",
@@ -102,3 +102,61 @@ def crear_usuario(usuario: UserCreate):
     base_datos.append(nuevo_usuario)
 
     return nuevo_usuario
+
+
+@router.put("/{id}", response_model=UserResponse)
+def actualizar_usuario(id: int, usuario: UserCreate):
+    for usuario_existente in base_datos:
+        if usuario_existente["id"] == id:
+            usuario_existente["name"] = usuario.name
+            usuario_existente["email"] = usuario.email
+            usuario_existente["role"] = usuario.role
+            usuario_existente["is_active"] = usuario.is_active
+
+            return usuario_existente
+
+    raise HTTPException(
+        status_code=404,
+        detail="Usuario no encontrado"
+    )
+
+
+@router.patch("/{id}", response_model=UserResponse)
+def actualizar_usuario_parcial(id: int, usuario: UserUpdate):
+    for usuario_existente in base_datos:
+        if usuario_existente["id"] == id:
+
+            if usuario.name is not None:
+                usuario_existente["name"] = usuario.name
+
+            if usuario.email is not None:
+                usuario_existente["email"] = usuario.email
+
+            if usuario.role is not None:
+                usuario_existente["role"] = usuario.role
+
+            if usuario.is_active is not None:
+                usuario_existente["is_active"] = usuario.is_active
+
+            return usuario_existente
+
+    raise HTTPException(
+        status_code=404,
+        detail="Usuario no encontrado"
+    )
+
+
+@router.delete("/{id}")
+def eliminar_usuario(id: int):
+    for usuario in base_datos:
+        if usuario["id"] == id:
+            base_datos.remove(usuario)
+
+            return {
+                "message": "Usuario eliminado correctamente"
+            }
+
+    raise HTTPException(
+        status_code=404,
+        detail="Usuario no encontrado"
+    )
