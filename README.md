@@ -2,32 +2,50 @@
 
 ## Descripción
 
-Este proyecto consiste en el desarrollo de una **API REST para la gestión de usuarios**, construida utilizando **Python y FastAPI**.
+Este proyecto consiste en el desarrollo de una API REST para la gestión de usuarios, construida utilizando Python y FastAPI.
 
-La aplicación permite consultar, filtrar y registrar usuarios mediante diferentes endpoints HTTP. Para este proyecto se utiliza una lista de Python como 
-**base de datos temporal**, por lo que la información se mantiene únicamente mientras la aplicación se encuentra en ejecución.
+La aplicación permite consultar, filtrar, registrar, actualizar y eliminar usuarios mediante diferentes endpoints HTTP.
 
-El proyecto está estructurado de manera modular, separando las rutas de la API y los esquemas de validación de datos.
+Para el almacenamiento de información se utiliza SQLite junto con SQLAlchemy, permitiendo que los usuarios registrados permanezcan almacenados en una base de datos local (test.db) aunque la aplicación se reinicie.
+
+El proyecto está estructurado de manera modular, separando las rutas de la API, los esquemas de validación, los modelos de base de datos y la configuración de la conexión.
 
 ---
 
+## Tecnologías utilizadas
+
+Python
+FastAPI
+Pydantic
+SQLAlchemy
+SQLite
+Uvicorn
+Swagger / OpenAPI
+
+---
 
 ## Estructura del proyecto
 
 ```text
-FastApi/
-│
-├── app/
-│   ├── main.py
-│   │
-│   ├── routes/
-│   │   └── user_routes.py
-│   │
-│   └── schemas/
-│       └── user_schema.py
-│
-├── .gitignore
-├── README.md
+FastApi/ 
+│ 
+├── app/ 
+│ ├── main.py 
+│ ├── database.py 
+│ │ 
+│ ├── models/ 
+│ │   └── usuario.py   
+│ │ 
+│ ├── routes/ 
+│ |   └── user_routes.py 
+| |
+│ └── schemas/ 
+│     └── user_schema.py 
+|
+├── Pruebas/ 
+├── .gitignore 
+├── README.md 
+├── test.db 
 └── venv/
 ```
 
@@ -39,20 +57,46 @@ Es el archivo principal de la aplicación.
 
 En este archivo se:
 
-* Crea la instancia de FastAPI.
-* Configura el nombre, descripción y versión de la API.
-* Define un middleware HTTP.
-* Agregan las rutas de usuarios mediante `include_router()`.
+Crea la instancia de FastAPI.
+Configura el nombre, descripción y versión de la API.
+Importa el modelo de usuario.
+Crea automáticamente las tablas de la base de datos.
+Define un middleware HTTP.
+Agregan las rutas de usuarios mediante include_router().
+
+La creación de las tablas se realiza mediante: Base.metadata.create_all(bind=engine)
+
+
+### `app/database.py`
+
+Contiene la configuración de la conexión con la base de datos SQLite.
+
+Se define:
+
+La URL de conexión.
+El motor de SQLAlchemy (engine).
+La fábrica de sesiones (SessionLocal).
+La clase base para los modelos (Base).
+
+La base de datos utilizada es:
+
+sqlite:///./test.db
+
+Por lo tanto, el archivo test.db se encuentra en la raíz del proyecto.
+
 
 #### `app/routes/user_routes.py`
 
 Contiene los endpoints relacionados con la gestión de usuarios.
 
-También contiene actualmente una lista llamada `base_datos`, utilizada como almacenamiento temporal de los usuarios.
+Las rutas utilizan SessionLocal para abrir sesiones con la base de datos y realizar operaciones de consulta, creación, actualización y eliminación.
+
+También utiliza Depends() de FastAPI para administrar las sesiones de SQLAlchemy.
+
 
 #### `app/schemas/user_schema.py`
 
-Contiene los modelos de datos utilizados para validar la información recibida y enviada por la API.
+Contiene los modelos Pydantic utilizados para validar la información recibida y enviada por la API.
 
 Se utilizan:
 
@@ -60,6 +104,16 @@ Se utilizan:
 * `EmailStr`
 * `Field`
 * `Literal`
+
+
+### `test.db`
+
+Es la base de datos SQLite utilizada por la aplicación.
+
+Dentro de ella se encuentra la tabla: usuarios
+
+La tabla almacena los usuarios registrados mediante la API.
+
 
 #### `.gitignore`
 
@@ -91,9 +145,78 @@ Los roles permitidos son:
 * `support`
 * `user`
 
-Además, el nombre debe contener como mínimo **3 caracteres** y el correo debe cumplir con un formato válido.
+Además, el nombre debe contener como mínimo **3 caracteres**, el correo debe cumplir con un formato válido, el correo debe ser único, el rol debe pertenecer a los valores permitidos y is_active debe ser un valor booleano.
 
 ---
+
+
+## Validaciones y restricciones
+
+### Validaciones con Pydantic
+
+La validación de los datos recibidos por la API se realiza mediante Pydantic.
+
+El modelo UserBase establece las siguientes reglas:
+
+class UserBase(BaseModel):
+
+    name: str = Field(..., min_length=3)
+
+    email: EmailStr
+
+    role: Literal["admin", "support", "user"]
+
+    is_active: bool
+
+Esto permite garantizar que:
+
+El nombre tenga mínimo 3 caracteres.
+El correo tenga un formato válido.
+El rol corresponda a uno de los valores permitidos.
+is_active sea un valor booleano.
+
+Cuando los datos no cumplen estas reglas, FastAPI devuelve automáticamente un error 422 Unprocessable Entity.
+
+
+## Constraints en SQLAlchemy
+
+El modelo Usuario utiliza diferentes restricciones para garantizar la integridad de los datos:
+
+id = Column(Integer, primary_key=True, index=True)
+
+name = Column(String, nullable=False)
+
+email = Column(
+    String,
+    unique=True,
+    nullable=False,
+    index=True
+)
+
+role = Column(String, nullable=False)
+
+is_active = Column(Boolean, nullable=False, default=True)
+nullable=False
+
+Impide que los campos puedan almacenarse con un valor NULL en la base de datos.
+
+Se aplica a:
+
+name
+email
+role
+is_active
+unique=True
+
+Se aplica al campo email y evita que existan dos usuarios con el mismo correo electrónico.
+
+primary_key=True
+
+Se utiliza en id para identificar de manera única cada usuario.
+
+default=True
+
+Establece True como valor predeterminado para is_active cuando no se especifica otro valor al crear el registro.
 
 
 # Endpoints
@@ -135,6 +258,14 @@ GET http://127.0.0.1:8000/users/
     }
 ]
 ```
+
+Si no existen usuarios, la API devuelve:
+
+{
+    "detail": "No se encontraron usuarios"
+}
+
+con código: 404 Not Found
 
 ---
 
@@ -198,6 +329,7 @@ Esta consulta devuelve únicamente los usuarios que:
 * Se encuentran activos.
 
 ---
+
 
 ## 5. Obtener un usuario por ID
 
@@ -441,6 +573,8 @@ La API implementa diferentes códigos de estado HTTP para informar el resultado 
 | `201`  | Usuario creado correctamente        |
 | `400`  | Datos no válidos o correo duplicado |
 | `404`  | Recurso no encontrado               |
+| `422`  | Error de validación de datos        |
+
 
 ### Usuario inexistente
 
@@ -462,64 +596,112 @@ Si se intenta registrar un usuario con un correo que ya existe:
 
 ---
 
-# Validación de datos
+# Datos inválidos
 
-La validación se realiza utilizando **Pydantic**.
+Cuando los datos enviados no cumplen las validaciones de Pydantic, FastAPI devuelve:
 
-El modelo `UserBase` establece las reglas principales:
+422 Unprocessable Entity
 
-```python
-class UserBase(BaseModel):
-    name: str = Field(..., min_length=3)
-    email: EmailStr
-    role: Literal["admin", "support", "user"]
-    is_active: bool
-```
+Por ejemplo:
 
-Esto permite garantizar que:
-
-* El nombre tenga mínimo 3 caracteres.
-* El correo tenga un formato válido.
-* El rol corresponda a uno de los valores permitidos.
-* `is_active` sea un valor booleano.
+Nombre con menos de 3 caracteres.
+Correo electrónico inválido.
+Rol no permitido.
+Tipo de dato incorrecto.
 
 ---
 
-# Middleware
+## Base de datos
 
-El proyecto incluye un middleware HTTP en `main.py`.
+El proyecto utiliza SQLite como sistema de almacenamiento y SQLAlchemy como ORM.
+
+La configuración de la base de datos se encuentra en:
+
+app/database.py
+
+La URL utilizada es:
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+
+Esto permite trabajar con una base de datos local llamada:
+
+test.db
+
+Dentro de la base de datos se encuentra la tabla:
+
+usuarios
+
+Las tablas se crean automáticamente mediante:
+
+Base.metadata.create_all(bind=engine)
+
+De esta manera, no es necesario crear manualmente la tabla usuarios.
+
+---
+
+## Sesiones con SQLAlchemy
+
+Para realizar las operaciones sobre la base de datos se utiliza SessionLocal.
+
+La aplicación obtiene una sesión mediante una dependencia de FastAPI:
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+Esto permite:
+
+Abrir una sesión con la base de datos.
+Utilizar la sesión dentro del endpoint.
+Cerrar la sesión cuando termina la petición.
+
+Por ejemplo, para consultar usuarios se utiliza:
+
+db.query(Usuario).all()
+
+Para guardar un usuario:
+
+db.add(nuevo_usuario)
+db.commit()
+db.refresh(nuevo_usuario)
+
+---
+
+##Swagger / OpenAPI
+
+FastAPI genera automáticamente la documentación de la API utilizando Swagger UI y OpenAPI.
+
+La documentación interactiva puede consultarse en:
+
+http://127.0.0.1:8000/docs
+
+Desde Swagger se pueden probar directamente los endpoints:
+
+GET
+POST
+PUT
+PATCH
+DELETE
+
+También se puede consultar el documento OpenAPI en:
+
+http://127.0.0.1:8000/openapi.json
+
+---
+
+## Middleware
+
+El proyecto incluye un middleware HTTP en main.py.
 
 Este middleware agrega automáticamente dos cabeceras a las respuestas:
 
-```text
 X-App-Name: device_systems
 X-API-Version: 1.0
-```
 
 Estas cabeceras permiten identificar la aplicación y la versión de la API.
-
----
-
-# Almacenamiento de datos
-
-Actualmente el proyecto utiliza una lista de Python como almacenamiento temporal:
-
-```python
-base_datos = [
-    ...
-]
-```
-
-Esto significa que **no existe todavía una base de datos permanente**.
-
-Los usuarios creados mediante la API se mantienen mientras el servidor está ejecutándose. Si la aplicación se reinicia, los nuevos registros se pierden y se recuperan únicamente los usuarios definidos inicialmente en el código.
-
-Para una versión futura del proyecto se podría implementar una base de datos como:
-
-* MySQL.
-* PostgreSQL.
-* SQLite.
-* MongoDB.
 
 ---
 

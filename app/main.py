@@ -1,5 +1,9 @@
 from fastapi import FastAPI, Request
+
 from app.routes.user_routes import router
+from app.database import Base, engine
+from app.models.usuario import Usuario
+
 
 app = FastAPI(
     title="device_systems",
@@ -8,9 +12,12 @@ app = FastAPI(
 )
 
 
+# Crear automáticamente las tablas de la base de datos
+Base.metadata.create_all(bind=engine)
+
+
 @app.middleware("http")
 async def agregar_cabeceras(request: Request, call_next):
-
     response = await call_next(request)
 
     response.headers["X-App-Name"] = "device_systems"
